@@ -1,9 +1,11 @@
 Npm D3 v4 Modules
 
 //Installation
+
 npm install d3_module
 
 //Init
+
 let ele = document.getElementById('demo');
 let category = ['BT', 'NT', 'RT'];
 
