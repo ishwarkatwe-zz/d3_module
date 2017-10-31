@@ -17,6 +17,9 @@ let category = ['BT', 'NT', 'RT'];
  * */
  
 let BubbleScaleObj = new BubbleScaleX(ele, 800, 500, this.dataSet, category, 200);
-BubbleScaleObj.render();
-BubbleScaleObj.simulateCenterFun();
-BubbleScaleObj.bindClick(this.nodeClick);
+
+BubbleScaleObj.render(); 
+
+BubbleScaleObj.simulateCenterFun(); 
+
+BubbleScaleObj.bindClick(this.nodeClick); 
