@@ -303,6 +303,7 @@ export class BubbleForce {
       .range([2, 85])
       .domain([0, maxAmount]);
 
+
     // Use map() to convert raw data into node data.
     // Checkout http://learnjsdata.com/ for more on
     // working with data.
