@@ -108,9 +108,6 @@ export class BubbleForce {
 
     // Create a SVG element inside the provided selector
     // with desired size.
-
-    d3.select("svg").remove();
-
     _self.svg = d3.select(_self.element)
       .append('svg')
       .attr('width', _self.width)
