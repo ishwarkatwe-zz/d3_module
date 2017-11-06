@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Line Graph</title>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+<body>
+
+
+<div id="line-chart" style="width:1000px; height:400px"></div>
+
+
+<!-- Load in the d3 library -->
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+
+<script type="text/javascript">
+
+    var quotes = new Array("APCPCS", "APPLAB", "APCPCS", "JCPSA6");
+
+    var dataset = d3.range(50).map(function (d, i) {
+        var randno = Math.floor(Math.random() * quotes.length);
+        return {
+            "category": quotes[randno],
+            "range": d3.randomUniform(1, 50)(),
+            "date": Math.ceil(d3.randomUniform(1, 30)()) + '/' + Math.ceil(d3.randomUniform(1, 12)()) + '/' + '2017',
+            "journal": d3.randomUniform(1, 10)(),
+            "count": d3.randomUniform(1, 10)()
+        }
+    });
+
+
+    var con = document.getElementById("line-chart").getBoundingClientRect();
+    var margin = {
+        left: 50,
+        right: 50,
+        top: 50,
+        bottom: 50
+    };
+
+    var xLine = {
+        key: 'date',
+        value: 'Publication Years'
+    }
+
+    var yLine = {
+        key: 'range',
+        value: 'Range'
+    }
+
+    var rAttr = {
+        key: 'count',
+        value: 'Count'
+    }
+
+    var groupAttr = {
+        key: 'category',
+        value: 'Category'
+    }
+
+
+    var width = con.width,
+            height = con.height;
+
+    var zoom = d3.zoom()
+            .scaleExtent([1, 1.5])
+            .on("zoom", zoomed);
+
+    var parseTime = d3.timeParse("%d/%m/%Y");
+
+    var svg = d3.select("#line-chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .call(zoom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var x = d3.scaleTime().range([0, width]);
+    var y = d3.scaleLinear().range([height, 0]);
+    var r = d3.scaleLinear().range([0, 15]);
+    var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    var x_axis = x.domain(d3.extent(dataset, function (d) {
+        return parseTime(d[xLine.key]);
+    }));
+    var y_axis = y.domain([0, d3.max(dataset, function (d) {
+        return d[yLine.key];
+    })]);
+    var radius = r.domain([0, d3.max(dataset, function (d) {
+        return d[rAttr.key];
+    })]);
+
+    var xTick = d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m-%d"));
+
+    var xAxisGTag = svg.append("g")
+            .attr("class", "X-Axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xTick);
+
+    // Add the Y Axis
+    svg.append("g")
+            .attr("class", "axis")
+            .call(d3.axisLeft(y));
+
+
+    var circles = svg.selectAll(".dot")
+            .data(dataset)
+            .enter().append("circle") // Uses the enter().append() method
+            .attr("class", function (d) {
+                var className = 'dot ' + d[groupAttr.key];
+                return className;
+            })
+            .attr("cx", function (d) {
+                var date = parseTime(d[xLine.key]);
+                return x(date);
+            })
+            .attr("cy", function (d) {
+                return y(d[yLine.key]);
+            })
+            .attr("r", function (d) {
+                return radius(d[rAttr.key]);
+            })
+            .style("fill", function (d, i) {
+                return colorScale(d[groupAttr.key]);
+            })
+            .style("cursor", 'pointer')
+            .on("mouseover", function (d) {
+
+                d3.selectAll(".dot").style("opacity", ".1");
+                d3.selectAll('.' + d[groupAttr.key]).style("opacity", "1");
+
+                tooltip.html("Date : " + d[xLine.key] + ", <br>  Range : " + d[yLine.key] + ", <br>  Journal : " + d.journal + ", <br>  Category : " + d.category);
+                tooltip.style("visibility", "visible");
+
+                line(d3.mouse(this));
+            })
+            .on("mousemove", function (d) {
+
+                d3.selectAll(".dot").style("opacity", ".1");
+                d3.selectAll('.' + d[groupAttr.key]).style("opacity", "1");
+
+                line(d3.mouse(this));
+
+                return tooltip.style("top", (d3.event.pageY - 10) + "px").style("left", (d3.event.pageX + 10) + "px");
+            })
+            .on("mouseout", function () {
+                clearFocus();
+
+                d3.selectAll(".dot").style("opacity", "1");
+
+                return tooltip.style("visibility", "hidden");
+            });
+
+
+    function zoomed() {
+        xAxisGTag.transition()
+                .duration(50)
+                .call(xTick.scale(d3.event.transform.rescaleX(x)));
+
+        var newX = d3.event.transform.rescaleX(x);
+
+        circles.attr("cx", function (d) {
+            return newX(parseTime(d[xLine.key]));
+        });
+    }
+
+
+    var tooltip = d3.select("body")
+            .append("div")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+            .style("color", "white")
+            .style("padding", "8px")
+            .style("background-color", "rgba(0, 0, 0, 0.75)")
+            .style("border-radius", "6px")
+            .style("font", "12px sans-serif")
+            .text("tooltip");
+
+    function line(mouse) {
+
+        clearFocus();
+
+        svg.append("line")
+                .attr("class", 'focus-x')
+                .attr("x1", 0)
+                .attr("y1", mouse[1])
+                .attr("x2", mouse[0] - 15)
+                .attr("y2", mouse[1])
+                .style("stroke","#ccc")
+                .style("stroke-width","2")
+                .style("stroke-dasharray", ("3, 3"));
+
+
+        svg.append("line")
+                .attr("class", 'focus-y')
+                .attr("x1", mouse[0])
+                .attr("y1", mouse[1] + 15)
+                .attr("x2", mouse[0])
+                .attr("y2", height)
+                .style("stroke","#ccc")
+                .style("stroke-width","2")
+                .style("stroke-dasharray", ("3, 3"));
+    }
+
+
+    function clearFocus() {
+        d3.select(".focus-x").remove();
+        d3.select(".focus-y").remove();
+    }
+</script>
+</body>
+</html>
+
